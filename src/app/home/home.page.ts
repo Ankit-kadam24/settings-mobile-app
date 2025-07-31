@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonService } from '../services/common.service';
 
 @Component({
   selector: 'app-home',
@@ -6,8 +7,17 @@ import { Component } from '@angular/core';
   styleUrls: ['home.page.scss'],
   standalone: false,
 })
-export class HomePage {
+export class HomePage implements OnInit {
+  deviceInfo: any = {};
 
-  constructor() {}
+  constructor(private commonService: CommonService) {}
 
+  async ngOnInit() {
+    this.deviceInfo = await this.commonService.printDeviceInfo();
+    this.commonService.requestAllPermissions();
+  }
+
+  copyToClipboard(value: any) {
+    navigator.clipboard.writeText(String(value));
+  }
 }
