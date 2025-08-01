@@ -1,6 +1,7 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>Device Info</ion-title>
+    <ion-button (click)="PermissionsClick()" >Permissions</ion-button>
   </ion-toolbar>
 </ion-header>
 
@@ -21,4 +22,64 @@
       </ion-col>
     </ion-row>
   </ion-grid>
+
+  <!-- Camera Section -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Camera Permission</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button (click)="onOpenCamera()">Open Camera</ion-button>
+      <div *ngIf="capturedImage">
+        <img [src]="capturedImage" style="max-width: 100%; margin-top: 10px;" />
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Record Audio Section -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>RECORD_AUDIO Permission</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button 
+        [color]="isRecording ? 'danger' : 'primary'"
+        (click)="onRecordAudio()">
+        {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
+      </ion-button>
+      <div *ngIf="isRecording" style="margin-top: 10px; color: red;">
+        🔴 Recording in progress...
+      </div>
+      <ion-list *ngIf="recordings.length">
+        <ion-item *ngFor="let rec of recordings; let i = index">
+          <ion-label>Recording {{ i + 1 }}</ion-label>
+          <ion-button (click)="playRecording(rec)" size="small">Play</ion-button>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Contacts Section -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>READ_CONTACTS Permission</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button (click)="onGetContacts()">
+        {{ showContacts ? 'Hide Contacts' : 'Show Contacts' }}
+      </ion-button>
+      <ion-list *ngIf="showContacts && contacts.length">
+        <ion-item *ngFor="let contact of contacts">
+          <ion-label>
+            <h3>{{ contact.name?.display || 'Unknown' }}</h3>
+            <p *ngIf="contact.phones?.length">📞 {{ contact.phones[0].value }}</p>
+            <p *ngIf="contact.emails?.length">📧 {{ contact.emails[0].value }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+      <div *ngIf="showContacts && contacts.length === 0" style="margin-top: 10px; color: gray;">
+        No contacts found
+      </div>
+    </ion-card-content>
+  </ion-card>
 </ion-content>

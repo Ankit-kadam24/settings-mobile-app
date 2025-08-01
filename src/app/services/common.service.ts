@@ -2,13 +2,19 @@ import { Injectable } from '@angular/core';
 import { Device } from '@capacitor/device';
 import { Preferences } from '@capacitor/preferences';
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Media } from '@awesome-cordova-plugins/media/ngx';
+import { Contacts } from '@capacitor-community/contacts';
 
 
 @Injectable({
   providedIn: 'root',
 })
 export class CommonService {
-  constructor(private androidPermissions: AndroidPermissions) {}
+  constructor(
+    public androidPermissions: AndroidPermissions,
+    private media: Media
+  ) {}
 
   async printDeviceInfo(): Promise<any> {
     try {
@@ -92,4 +98,101 @@ async requestAllPermissions() {
   }
 }
 
+  async openCamera(): Promise<string | null> {
+    try {
+      const image = await Camera.getPhoto({
+        resultType: CameraResultType.Base64,
+        source: CameraSource.Camera
+      });
+      return image.dataUrl ?? null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async recordAudio(): Promise<string | null> {
+    try {
+      // Create a unique filename for the recording
+      const timestamp = new Date().getTime();
+      const filename = `recording_${timestamp}.wav`;
+      
+      // Start recording
+      const media = this.media.create(`/storage/emulated/0/${filename}`);
+      media.startRecord();
+      
+      // Return the filename for later use
+      return filename;
+    } catch (e) {
+      console.error('Error recording audio:', e);
+      return null;
+    }
+  }
+
+  async getContacts(): Promise<any[]> {
+    try {
+      const result = await Contacts.getContacts({
+        projection: {
+          name: true,
+          phones: true,
+          emails: true
+        }
+      });
+      return result.contacts || [];
+    } catch (e) {
+      console.error('Error fetching contacts:', e);
+      return [];
+    }
+  }
+
+  playAudio(filePath: string) {
+    const media = this.media.create(filePath);
+    media.play();
+  }
+
+
+  async checkManageExternalStorage(): Promise<boolean> {
+    try {
+      // For Android 11+ (API 30+)
+      // const info = await Device.getInfo();
+      // if (parseInt(info.osVersion) >= 30) {
+        // Step 1: Try normal permission request
+        let hasPermission = await this.androidPermissions.checkPermission(
+          'android.permission.MANAGE_EXTERNAL_STORAGE'
+        );
+  
+        console.log("hasPermission --->",hasPermission);
+        if (!hasPermission.hasPermission) {
+          // Try requesting via plugin
+          const result = await this.androidPermissions.requestPermission(
+            'android.permission.MANAGE_EXTERNAL_STORAGE'
+          );
+        console.log("result ---->",result);
+
+          if (result.hasPermission) {
+            return true;
+          }
+          // Step 2: If still not granted, open Settings
+          await this.requestManageExternalStorage();
+          return false;
+        }
+        return true;
+      // }
+      // return true; // For older Android versions
+    } catch (e) {
+      console.error('Error checking MANAGE_EXTERNAL_STORAGE:', e);
+      return false;
+    }
+  }
+  
+  async requestManageExternalStorage(): Promise<void> {
+    try {
+      // Open Settings to let user manually grant permission
+      const { App } = await import('@capacitor/app');
+      // await App.openAppSettings();
+      alert('Please grant \"All files access\" permission in Settings, then return to the app.');
+    } catch (e) {
+      console.error('Error opening settings:', e);
+    }
+  }
+  
 } 
